@@ -1,0 +1,159 @@
+import os
+
+
+class Board:
+    def __init__(self):
+        self.cells = [" "] * 10  # 10 elements (0th index unused)
+
+    def display(self):
+        print(f" {self.cells[1]} | {self.cells[2]} | {self.cells[3]}")
+        print("-----------")
+        print(f" {self.cells[4]} | {self.cells[5]} | {self.cells[6]}")
+        print("-----------")
+        print(f" {self.cells[7]} | {self.cells[8]} | {self.cells[9]}")
+
+    def update_cells(self, cell_no, player):
+        if 1 <= cell_no <= 9 and self.cells[cell_no] == " ":
+            self.cells[cell_no] = player
+            return True
+        return False
+
+    def is_winner(self, player):
+        return (
+            (self.cells[1] == player and self.cells[2] == player and self.cells[3] == player) or
+            (self.cells[4] == player and self.cells[5] == player and self.cells[6] == player) or
+            (self.cells[7] == player and self.cells[8] == player and self.cells[9] == player) or
+            (self.cells[1] == player and self.cells[5] == player and self.cells[9] == player) or
+            (self.cells[3] == player and self.cells[5] == player and self.cells[7] == player) or
+            (self.cells[1] == player and self.cells[4] == player and self.cells[7] == player) or
+            (self.cells[2] == player and self.cells[5] == player and self.cells[8] == player) or
+            (self.cells[3] == player and self.cells[6] == player and self.cells[9] == player)
+        )
+
+    def is_tie(self):
+        return " " not in self.cells[1:10]
+
+    def reset(self):
+        self.cells = [" "] * 10
+
+    def ai_move(self, player):
+        opponent = "O" if player == "X" else "X"
+        # if center is open, choose that
+        if self.cells[5] == " ":
+            self.update_cells(5, player)
+            return
+
+        # Check if AI can win or block
+        for i in range(1, 10):
+            if self.cells[i] == " ":
+                self.update_cells(i, player)
+                if self.is_winner(player):
+                    return
+                self.cells[i] = " "  # Undo move
+
+        for i in range(1, 10):
+            if self.cells[i] == " ":
+                self.update_cells(i, opponent)
+                if self.is_winner(opponent):
+                    self.cells[i] = " "  # Undo move
+                    self.update_cells(i, player)
+                    return
+                self.cells[i] = " "  # Undo move
+
+        # Choose the first available cell
+        for i in range(1, 10):
+            if self.cells[i] == " ":
+                self.update_cells(i, player)
+                break
+
+
+def print_header():
+    print("Welcome to Tic-Tac-Toe\n")
+
+
+def refresh_screen(board):
+    os.system("cls" if os.name == "nt" else "clear")  # clear the screen
+    board.display()  # show the board
+
+
+def get_player_choice(player, board):
+    while True:
+        try:
+            choice = int(input(f"\n{player}) Please choose a number from 1-9: "))
+            if 1 <= choice <= 9:
+                if board.update_cells(choice, player):
+                    return
+                else:
+                    print("Cell already taken. Please choose a different cell.")
+            else:
+                print("Invalid choice. Please choose a number from 1-9.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+
+def play_game():
+    board = Board()  # Initialize the board instance here
+    print_header()
+
+    player_symbol = ""
+    while player_symbol not in ["X", "O"]:
+        player_symbol = input("Do you want to be X or O? ").upper()
+
+    computer_symbol = "O" if player_symbol == "X" else "X"
+
+    game_mode = ""
+    while game_mode not in ["1", "2"]:
+        game_mode = input("Choose game mode: 1) Player vs. Computer 2) Player vs. Player: ")
+
+    board.reset()
+
+    while True:
+        refresh_screen(board)  # Display the board initially
+
+        # Player 1's move
+        get_player_choice("X", board)
+        refresh_screen(board)  # Display the board after Player 1's move
+
+        if board.is_winner("X"):
+            print("\n" + ("You win!" if game_mode == "1" else "Player 1 wins!") + "\n")
+            if input("Would you like to play again? Y/N: ").upper() != 'Y':
+                break
+            board.reset()
+            print_header()
+            continue
+
+        if board.is_tie():
+            print("\nTie Game!\n")
+            if input("Would you like to play again? Y/N: ").upper() != 'Y':
+                break
+            board.reset()
+            print_header()
+            continue
+
+        # Player 2's move (Computer or second player)
+        if game_mode == "1":
+            print("\nComputer is making its move...")
+            board.ai_move("O")
+            refresh_screen(board)  # Display the board after Computer's move
+        else:
+            get_player_choice("O", board)
+            refresh_screen(board)  # Display the board after Player 2's move
+
+        if board.is_winner("O"):
+            print("\n" + ("Computer wins!" if game_mode == "1" else "Player 2 wins!") + "\n")
+            if input("Would you like to play again? Y/N: ").upper() != 'Y':
+                break
+            board.reset()
+            print_header()
+            continue
+
+        if board.is_tie():
+            print("\nTie Game!\n")
+            if input("Would you like to play again? Y/N: ").upper() != 'Y':
+                break
+            board.reset()
+            print_header()
+
+
+# Start the game
+play_game()
